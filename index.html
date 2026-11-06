@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>전국 203개 간호대학 입시정보 대시보드</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-50 min-h-screen text-slate-800">
+    <header class="bg-indigo-700 text-white py-6 px-4 shadow-md">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <div>
+                <h1 class="text-2xl font-bold">🏥 전국 203개 간호대학 입시정보 대시보드</h1>
+                <p class="text-indigo-200 text-sm mt-1">전국 고등학교 진학 및 보건 교사용 종합 검색 시스템</p>
+            </div>
+            <button onclick="window.print()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg text-sm transition">
+                🖨️ 상담용 인쇄
+            </button>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 py-8">
+        <!-- 검색 및 필터 컨트롤 -->
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 mb-6 space-y-4">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <input type="text" id="searchInput" oninput="filterData()" placeholder="대학명 또는 지역 검색..." class="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500 outline-none">
+                <select id="regionFilter" onchange="filterData()" class="border rounded-lg px-4 py-2 outline-none">
+                    <option value="">전국 (전체 지역)</option>
+                    <option value="서울">서울</option>
+                    <option value="경기">경기/인천</option>
+                    <option value="충청">충청권 (대전/세종/충남/충북)</option>
+                    <option value="영남">영남권 (부산/대구/울산/경남/경북)</option>
+                    <option value="호남">호남권 (광주/전남/전북)</option>
+                    <option value="강원">강원권</option>
+                    <option value="제주">제주권</option>
+                </select>
+                <select id="typeFilter" onchange="filterData()" class="border rounded-lg px-4 py-2 outline-none">
+                    <option value="">전체 학제</option>
+                    <option value="4년제">4년제 일반대</option>
+                    <option value="전문대">3/4년제 전문대</option>
+                </select>
+                <select id="minScoreFilter" onchange="filterData()" class="border rounded-lg px-4 py-2 outline-none">
+                    <option value="">수능 최저 (전체)</option>
+                    <option value="yes">수능 최저 있음</option>
+                    <option value="no">수능 최저 없음</option>
+                </select>
+            </div>
+
+            <div class="flex flex-wrap gap-4 pt-2 border-t border-slate-100">
+                <span class="text-sm font-semibold text-slate-600 self-center">특별전형 조건:</span>
+                <label class="inline-flex items-center text-sm font-medium text-slate-700 cursor-pointer">
+                    <input type="checkbox" id="vocationalFilter" onchange="filterData()" class="rounded text-indigo-600 focus:ring-indigo-500 h-4 w-4 mr-1.5"> 특성화고 전형
+                </label>
+                <label class="inline-flex items-center text-sm font-medium text-slate-700 cursor-pointer">
+                    <input type="checkbox" id="adultFilter" onchange="filterData()" class="rounded text-indigo-600 focus:ring-indigo-500 h-4 w-4 mr-1.5"> 만학도 전형
+                </label>
+                <label class="inline-flex items-center text-sm font-medium text-slate-700 cursor-pointer">
+                    <input type="checkbox" id="workerFilter" onchange="filterData()" class="rounded text-indigo-600 focus:ring-indigo-500 h-4 w-4 mr-1.5"> 재직자 전형
+                </label>
+            </div>
+        </div>
+
+        <!-- 통계 상자 -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 text-center">
+            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                <div class="text-xs text-slate-500">총 검색된 대학</div>
+                <div id="countTotal" class="text-2xl font-bold text-indigo-600">203개교</div>
+            </div>
+            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                <div class="text-xs text-slate-500">수도권 대학</div>
+                <div id="countCapital" class="text-2xl font-bold text-slate-700">42개교</div>
+            </div>
+            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                <div class="text-xs text-slate-500">비수도권 대학</div>
+                <div id="countNonCapital" class="text-2xl font-bold text-slate-700">161개교</div>
+            </div>
+            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                <div class="text-xs text-slate-500">자대/부속병원 보유</div>
+                <div id="countHospital" class="text-2xl font-bold text-emerald-600">38개교</div>
+            </div>
+        </div>
+
+        <!-- 대학 카드 그리드 -->
+        <div id="collegeGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+    </main>
+
+    <!-- 외부 데이터 파일(data.js) 불러오기 -->
+    <script src="./data.js"></script>
+    <script>
+        function renderCards(colleges) {
+            const grid = document.getElementById('collegeGrid');
+            grid.innerHTML = colleges.map(c => `
+                <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm hover:shadow-md transition">
+                    <div class="flex justify-between items-start mb-3">
+                        <div>
+                            <span class="text-xs font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-600 mr-1">${c.region}</span>
+                            <span class="text-xs font-bold px-2 py-0.5 rounded bg-indigo-50 text-indigo-600">${c.type}</span>
+                            <h3 class="text-lg font-bold text-slate-800 mt-1">${c.name}</h3>
+                        </div>
+                        ${c.hospital.includes('자대') ? '<span class="text-xs bg-emerald-100 text-emerald-700 px-2 py-1 rounded-full font-bold">🏥 자대병원</span>' : ''}
+                    </div>
+                    <div class="space-y-1.5 text-xs text-slate-600 border-t border-slate-100 pt-3">
+                        <div><strong class="text-slate-700">수시 교과:</strong> ${c.susi_gyokwa}</div>
+                        <div><strong class="text-slate-700">수시 종합:</strong> ${c.susi_jonghap}</div>
+                        <div><strong class="text-slate-700">수능 최저:</strong> <span class="${c.min_score !== '없음' ? 'text-indigo-600 font-bold' : ''}">${c.min_score}</span></div>
+                    </div>
+                    <div class="mt-3 pt-3 border-t border-slate-100 flex flex-wrap gap-1">
+                        <span class="text-[11px] px-2 py-0.5 rounded ${c.spec_vocational ? 'bg-blue-100 text-blue-700 font-bold' : 'bg-slate-100 text-slate-400'}">특성화고 ${c.spec_vocational ? 'O' : 'X'}</span>
+                        <span class="text-[11px] px-2 py-0.5 rounded ${c.spec_adult ? 'bg-amber-100 text-amber-700 font-bold' : 'bg-slate-100 text-slate-400'}">만학도 ${c.spec_adult ? 'O' : 'X'}</span>
+                        <span class="text-[11px] px-2 py-0.5 rounded ${c.spec_worker ? 'bg-purple-100 text-purple-700 font-bold' : 'bg-slate-100 text-slate-400'}">재직자 ${c.spec_worker ? 'O' : 'X'}</span>
+                    </div>
+                </div>
+            `).join('');
+            
+            document.getElementById('countTotal').innerText = colleges.length + '개교';
+        }
+
+        function filterData() {
+            const search = document.getElementById('searchInput').value.toLowerCase();
+            const region = document.getElementById('regionFilter').value;
+            const type = document.getElementById('typeFilter').value;
+            const minScore = document.getElementById('minScoreFilter').value;
+            const voc = document.getElementById('vocationalFilter').checked;
+            const adult = document.getElementById('adultFilter').checked;
+            const worker = document.getElementById('workerFilter').checked;
+
+            const filtered = COLLEGES_DATA.filter(c => {
+                const matchSearch = c.name.toLowerCase().includes(search) || c.region.includes(search);
+                const matchRegion = !region || c.region.includes(region);
+                const matchType = !type || c.type.includes(type);
+                const matchMin = !minScore || (minScore === 'yes' ? c.min_score !== '없음' : c.min_score === '없음');
+                const matchVoc = !voc || c.spec_vocational;
+                const matchAdult = !adult || c.spec_adult;
+                const matchWorker = !worker || c.spec_worker;
+                return matchSearch && matchRegion && matchType && matchMin && matchVoc && matchAdult && matchWorker;
+            });
+            renderCards(filtered);
+        }
+
+        // 초기 실행
+        window.onload = () => filterData();
+    </script>
+</body>
+</html>
